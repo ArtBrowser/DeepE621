@@ -11,10 +11,9 @@ def download_category_tags(category, minimum_post_count, limit, page_size=1000, 
         'general': 0,
         'artist': 1,
         'copyright': 3,
-        'character': 4
+        # 'character': 4,
+        'species': 5
     }
-
-    gold_only_tags = ['loli', 'shota', 'toddlercon']
 
     if category not in category_to_index:
         raise Exception(f'Not supported category : {category}')
@@ -28,12 +27,12 @@ def download_category_tags(category, minimum_post_count, limit, page_size=1000, 
         'search[category]': category_index
     }
 
-    request_url = 'https://danbooru.donmai.us/tags.json'
+    request_url = 'https://e621.net/tags.json'
 
     tags = set()
 
     while True:
-        response = requests.get(request_url, params=parameters)
+        response = requests.get(request_url, params=parameters, headers={'user-agent': 'DeepE621'})
         response_json = response.json()
 
         response_tags = [tag_json['name']
@@ -45,9 +44,6 @@ def download_category_tags(category, minimum_post_count, limit, page_size=1000, 
         is_full = False
 
         for tag in response_tags:
-            if tag in gold_only_tags:
-                continue
-
             tags.add(tag)
 
             if len(tags) >= limit:
@@ -99,10 +95,15 @@ def download_tags(project_path, limit, minimum_post_count, is_overwrite):
         #    'category': 'copyright',
         #    'path': os.path.join(path, 'tags-copyright.txt'),
         # },
+        # {
+        #    'category_name': 'Character',
+        #    'category': 'character',
+        #    'path': os.path.join(project_path, 'tags-character.txt'),
+        # },
         {
-            'category_name': 'Character',
-            'category': 'character',
-            'path': os.path.join(project_path, 'tags-character.txt'),
+            'category_name': 'Species',
+            'category': 'species',
+            'path': os.path.join(project_path, 'tags-species.txt'),
         },
     ]
 
@@ -121,7 +122,7 @@ def download_tags(project_path, limit, minimum_post_count, is_overwrite):
 
     total_tags_count = 0
 
-    with open(all_tags_path, 'w') as all_tags_stream:
+    with open(all_tags_path, 'w', encoding='utf-8') as all_tags_stream:
         for category_definition in category_definitions:
             category = category_definition['category']
             category_tags_path = category_definition['path']
@@ -137,7 +138,7 @@ def download_tags(project_path, limit, minimum_post_count, is_overwrite):
             else:
                 print(f'{tag_count} tags are downloaded.')
 
-            with open(category_tags_path, 'w') as category_tags_stream:
+            with open(category_tags_path, 'w', encoding='utf-8') as category_tags_stream:
                 for tag in tags:
                     category_tags_stream.write(f'{tag}\n')
                     all_tags_stream.write(f'{tag}\n')

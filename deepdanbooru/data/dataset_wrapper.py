@@ -1,5 +1,5 @@
 import random
-
+import requests
 import numpy as np
 import tensorflow as tf
 
@@ -12,6 +12,7 @@ class DatasetWrapper:
     """
 
     def __init__(self, inputs, tags, width, height, scale_range, rotation_range, shift_range):
+        print("Creating dataset wrapper with " + str(len(inputs[0])) + " inputs");
         self.inputs = inputs
         self.width = width
         self.height = height
@@ -22,6 +23,9 @@ class DatasetWrapper:
 
     def get_dataset(self, minibatch_size):
         dataset = tf.data.Dataset.from_tensor_slices(self.inputs)
+        dataset = dataset.map(lambda image_path,
+                    tag_string: tf.py_function(self.map_down_image, [image_path, tag_string], [tf.string, tf.string]),
+                              num_parallel_calls=tf.data.experimental.AUTOTUNE)
         dataset = dataset.map(
             self.map_load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         dataset = dataset.apply(tf.data.experimental.ignore_errors())
@@ -35,9 +39,14 @@ class DatasetWrapper:
 
         return dataset
 
+    def map_down_image(self, image_path, tag_string):
+        url = image_path.numpy().decode("utf-8")
+        #print("Downloading " + url)
+        return (requests.get(url).content, tag_string)
+
     def map_load_image(self, image_path, tag_string):
-        image_raw = tf.io.read_file(image_path)
-        image = tf.io.decode_png(image_raw, channels=3)
+        #image_raw = tf.io.read_file(image_path)
+        image = tf.io.decode_png(image_path, channels=3)
 
         if self.scale_range:
             pre_scale = self.scale_range[1]
