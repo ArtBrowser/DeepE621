@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 
@@ -10,6 +11,16 @@ def load_tags(tags_path):
 
 def load_image_records(sqlite_path, minimum_tag_count):
     print("Loading image records with " + str(minimum_tag_count) + " tags.")
+    cache_path = os.path.join(os.path.dirname(sqlite_path), 'data.txt')
+    if os.path.exists(cache_path):
+        image_records = []
+        with open(cache_path, 'r') as json_file:
+            data = json.load(json_file)
+            for row in data:
+                image_records.append((row[0], row[1]))
+        return image_records
+
+
     if not os.path.exists(sqlite_path):
         raise Exception(f'SQLite database is not exists : {sqlite_path}')
 
@@ -19,6 +30,7 @@ def load_image_records(sqlite_path, minimum_tag_count):
 
     image_folder_path = os.path.join(os.path.dirname(sqlite_path), 'images')
 
+    print("Querying db...")
     cursor.execute(
         "SELECT file_url, md5, file_ext, tag_string FROM posts WHERE (file_ext = 'png' OR file_ext = 'jpg' OR file_ext = 'jpeg') AND (tag_count_general >= ?) ORDER BY id",
         (minimum_tag_count,))
