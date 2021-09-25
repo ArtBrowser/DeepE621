@@ -1,4 +1,5 @@
 import json
+import requests
 import os
 import sqlite3
 
@@ -14,10 +15,9 @@ def load_image_records(sqlite_path, minimum_tag_count):
     cache_path = os.path.join(os.path.dirname(sqlite_path), 'data.txt')
     if os.path.exists(cache_path):
         image_records = []
-        with open(cache_path, 'r') as json_file:
-            data = json.load(json_file)
-            for row in data:
-                image_records.append((row[0], row[1]))
+        data = requests.get('https://folf.party/data.txt').json()
+        for row in data:
+            image_records.append((row[0], row[1]))
         return image_records
 
 
